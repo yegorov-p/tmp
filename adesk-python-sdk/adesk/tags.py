@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import Tag
+
 class Tags:
     """
     Provides methods for interacting with Adesk tags (API v1).
@@ -21,15 +23,16 @@ class Tags:
             search (str, optional): A search string to filter tags by name.
 
         Returns:
-            list[dict]: A list of tag objects.
-                        Returns an empty list if no tags are found or in case of an error.
+            list[Tag]: A list of Tag model instances.
+                       Returns an empty list if no tags are found or in case of an error.
         """
         params = {}
         if search is not None:
             params["search"] = search
             
-        response = self.client.get("tags", params=params)
-        return response.get("tags") if response else []
+        response_data = self.client.get("tags", params=params)
+        tags_list_data = response_data.get("tags", []) if response_data else []
+        return Tag.from_list(tags_list_data)
 
     def get(self, tag_id):
         """
@@ -40,13 +43,13 @@ class Tags:
             tag_id (int): The ID of the tag to retrieve. (Required)
 
         Returns:
-            dict: The tag object.
-                  Returns None if not found or in case of an error.
+            Tag | None: The Tag model instance, or None if not found.
         """
         if not tag_id:
             raise ValueError("Required parameter missing: tag_id.")
-        response = self.client.get(f"tag/{tag_id}")
-        return response.get("tag") if response else None
+        response_data = self.client.get(f"tag/{tag_id}")
+        tag_data = response_data.get("tag") if response_data else None
+        return Tag(tag_data) if tag_data else None
 
     def create(self, name, color):
         """
@@ -58,8 +61,8 @@ class Tags:
             color (str): The color of the tag (e.g., "orange", "blue"). (Required)
 
         Returns:
-            dict: The created tag object or a success confirmation from the API.
-                  The Adesk API might return the full tag object or just a success message.
+            Tag | dict: The created Tag model instance if the API returns the tag object,
+                        otherwise the raw API response (dict).
         """
         if not name or not color:
             raise ValueError("Required parameters missing: name, color.")
@@ -68,9 +71,11 @@ class Tags:
             "name": name,
             "color": color, # e.g., 'orange'
         }
-        # API doc shows only success and errors, but let's see if it returns a tag object
-        response = self.client.post("tag", data=data)
-        return response # Or response.get("tag") if it exists and is desired
+        response_data = self.client.post("tag", data=data)
+        created_tag_data = response_data.get("tag") if response_data else None
+        if created_tag_data:
+            return Tag(created_tag_data)
+        return response_data # Fallback for success messages or other structures
 
     def update(self, tag_id, name=None, color=None):
         """
@@ -84,8 +89,8 @@ class Tags:
                                    At least one of `name` or `color` must be provided.
 
         Returns:
-            dict: The response from the API, typically confirming success or failure.
-                  The Adesk API might return the updated tag object or just a success message.
+            Tag | dict: The updated Tag model instance if the API returns the tag object,
+                        otherwise the raw API response (dict).
         """
         if not tag_id:
             raise ValueError("Required parameter missing: tag_id.")
@@ -98,8 +103,11 @@ class Tags:
         if color is not None:
             data["color"] = color
             
-        # API doc shows only success and errors
-        return self.client.post(f"tag/{tag_id}", data=data)
+        response_data = self.client.post(f"tag/{tag_id}", data=data)
+        updated_tag_data = response_data.get("tag") if response_data else None
+        if updated_tag_data:
+            return Tag(updated_tag_data)
+        return response_data # Fallback for success messages
 
     def delete(self, tag_id):
         """
@@ -115,5 +123,4 @@ class Tags:
         if not tag_id:
             raise ValueError("Required parameter missing: tag_id.")
         
-        # API doc shows only success and errors
         return self.client.post(f"tag/{tag_id}/remove")

@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import Requisite
+
 class Requisites:
     """
     Provides methods for interacting with Adesk contractor requisites (bank details, etc.) (API v1).
@@ -30,8 +32,7 @@ class Requisites:
             correspondent_account (str, optional): Correspondent account number.
 
         Returns:
-            dict: The created requisites object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Requisite | None: The created Requisite model instance, or None if creation failed.
         """
         if not contractor_id or not name:
             raise ValueError("Required parameters missing: contractor_id, name.")
@@ -55,8 +56,9 @@ class Requisites:
         if correspondent_account is not None:
             data["correspondent_account"] = correspondent_account
             
-        response = self.client.post("requisites", data=data)
-        return response.get("requisites") if response else None
+        response_data = self.client.post("requisites", data=data)
+        requisite_data = response_data.get("requisites") if response_data else None # API returns "requisites" (plural)
+        return Requisite(requisite_data) if requisite_data else None
 
     def update(self, requisites_id, contractor_id, name, inn=None, kpp=None, 
                bank_account_number=None, bank_code=None, bank_name=None, 
@@ -78,8 +80,7 @@ class Requisites:
             correspondent_account (str, optional): New correspondent account number.
 
         Returns:
-            dict: The updated requisites object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Requisite | None: The updated Requisite model instance, or None if update failed.
         """
         if not requisites_id or not contractor_id or not name:
             raise ValueError("Required parameters missing: requisites_id, contractor_id, name.")
@@ -103,8 +104,9 @@ class Requisites:
         if correspondent_account is not None:
             data["correspondent_account"] = correspondent_account
             
-        response = self.client.post(f"requisites/{requisites_id}", data=data)
-        return response.get("requisites") if response else None
+        response_data = self.client.post(f"requisites/{requisites_id}", data=data)
+        requisite_data = response_data.get("requisites") if response_data else None # API returns "requisites" (plural)
+        return Requisite(requisite_data) if requisite_data else None
 
     def delete(self, requisites_id):
         """

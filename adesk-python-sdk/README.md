@@ -73,6 +73,21 @@ try:
 
 except Exception as e:
     print(f"An API error occurred: {e}")
+
+    # Example of accessing model attributes
+    if projects: # Assuming 'projects' is a list of Project model instances
+        first_project = projects[0]
+        print(f"First project ID: {first_project.id}, Name: {first_project.name}")
+        if first_project.category: # Accessing a nested model attribute
+            print(f"Category: {first_project.category.name}")
+    
+    if created_project: # Assuming 'created_project' is a Project model instance
+         project_id_from_model = created_project.id # Access attribute
+         print(f"Created project ID from model: {project_id_from_model}")
+
+
+except Exception as e:
+    print(f"An API error occurred: {e}")
 ```
 
 ### Example: Working with API v2 Resources (Custom Report Groups)
@@ -81,67 +96,90 @@ except Exception as e:
 try:
     # List custom report groups
     report_groups = client.v2.custom_report_groups.list(report_section="finance")
-    if report_groups:
-        print("First finance report group:", report_groups[0])
+    if report_groups: # report_groups is a list of CustomReportGroup model instances
+        first_group = report_groups[0]
+        print(f"First finance report group ID: {first_group.id}, Name: {first_group.name}, API Name: {first_group.api_name}")
     else:
         print("No finance report groups found.")
 
     # Create a new custom report group
-    # Note: API v2 typically expects camelCase keys in the JSON body.
-    # The _request_v2 method sends Python dicts as JSON; the 'requests' library
-    # by default does not convert snake_case to camelCase.
-    # Ensure your API v2 is flexible or adjust keys in the dict if needed.
-    new_group_data = [{
+    # Note: API v2 typically expects camelCase keys in the JSON body for requests.
+    # The client methods send Python dicts as JSON.
+    # The models initialize from API responses which might use camelCase or snake_case.
+    new_group_payload = [{
         "name": "SDK Test Group",
-        "apiName": "sdkTestGroup", # camelCase as per API v2 docs
-        "reportSection": "general", # camelCase
+        "apiName": "sdkTestGroup", 
+        "reportSection": "general", 
         "color": "blue"
     }]
-    created_groups = client.v2.custom_report_groups.create(new_group_data)
-    if created_groups:
-        print("Created custom report group(s):", created_groups)
-        group_id = created_groups[0].get("id")
+    created_groups = client.v2.custom_report_groups.create(new_group_payload)
+    if created_groups: # created_groups is a list of CustomReportGroup model instances
+        created_group = created_groups[0]
+        print(f"Created custom report group ID: {created_group.id}, Name: {created_group.name}")
+        group_id = created_group.id # Use the ID from the model instance
 
         # Update the group
         if group_id:
             update_data = [{"id": group_id, "name": "SDK Test Group (Updated)"}]
             updated_groups = client.v2.custom_report_groups.update(update_data)
-            print("Updated group(s):", updated_groups)
+            if updated_groups:
+                print(f"Updated group name: {updated_groups[0].name}")
 
         # Remove the group (use with caution)
         # if group_id:
         #     remove_response = client.v2.custom_report_groups.remove([group_id])
-        #     print("Remove response:", remove_response)
+        #     # remove methods usually return a raw dict response (e.g., {"success": True})
+        #     print("Remove response:", remove_response) 
             
 except Exception as e:
     print(f"An API v2 error occurred: {e}")
 ```
+
+## Data Models
+
+The SDK maps API responses to dedicated Python classes (data models) for easier use. 
+Instead of dictionaries, methods that fetch data will typically return instances of these models, 
+allowing attribute-style access (e.g., `my_project.name`). This provides benefits like 
+easier attribute access and better integration with type hinting.
+
+Primary models include:
+*   `Project`, `ProjectCategory`
+*   `TransactionCategory`
+*   `BankAccount`
+*   `Commitment`, `LegalEntity`, `Transfer`, `Operation`
+*   `Contractor`, `Requisite`
+*   `Product`, `Unit`, `Tag`, `Webhook`
+*   And V2 models like `CustomReportGroup`, `CustomReportEntry`, `CustomReportValue`, `CustomReportValueList`, `CustomReportDebtEntry`.
+
+These models are defined in the `adesk.models` module and can also be imported directly 
+from `adesk` (e.g., `from adesk import Project`). Refer to the docstrings within each model 
+class in `adesk/models/` for details on their attributes.
 
 ## Available Resources
 
 The SDK provides access to various Adesk API resources, including:
 
 **API v1 Resources (accessed via `client.<resource_name>`):**
-*   `projects`: Manage projects and project categories.
-*   `transaction_categories`: Manage categories for financial operations.
-*   `commitments`: Handle financial commitments (planned income/outcome).
-*   `legal_entities`: Manage your organization's legal entities.
-*   `bank_accounts`: Manage bank accounts and cash accounts.
-*   `operations`: Record financial operations (transactions).
-*   `transfers`: Manage transfers between bank accounts.
-*   `contractors`: Manage contractors (clients, suppliers, etc.).
-*   `requisites`: Manage contractor requisites (bank details).
-*   `warehouse`: Manage products, services, units, and commodity expenses.
-*   `tags`: Manage tags for categorizing various items.
-*   `webhooks`: Configure webhooks for event notifications.
+*   `projects`: Manage projects and project categories. (Returns `Project`, `ProjectCategory` models)
+*   `transaction_categories`: Manage categories for financial operations. (Returns `TransactionCategory` models)
+*   `commitments`: Handle financial commitments. (Returns `Commitment` models)
+*   `legal_entities`: Manage your organization's legal entities. (Returns `LegalEntity` models)
+*   `bank_accounts`: Manage bank accounts and cash accounts. (Returns `BankAccount` models)
+*   `operations`: Record financial operations (transactions). (Returns `Operation` models)
+*   `transfers`: Manage transfers between bank accounts. (Returns `Transfer` models)
+*   `contractors`: Manage contractors. (Returns `Contractor`, `Commitment`, `Requisite` models)
+*   `requisites`: Manage contractor requisites. (Returns `Requisite` models)
+*   `warehouse`: Manage products, services, units, and commodity expenses. (Returns `Product`, `Unit`, `CommodityCost`, `WarehouseShipmentModel` models)
+*   `tags`: Manage tags. (Returns `Tag` models)
+*   `webhooks`: Configure webhooks. (Returns `Webhook` models)
 
 **API v2 Resources (accessed via `client.v2.<resource_name>`):**
-*   `custom_report_groups`: Manage groups for custom reports.
-*   `custom_report_entries`: Manage entries (rows/metrics) within custom report groups.
-*   `custom_report_values`: Manage the actual data values for custom report entries.
-*   `custom_report_debt_entries`: Manage debt-related entries for custom reports.
+*   `custom_report_groups`: Manage groups for custom reports. (Returns `CustomReportGroup` models)
+*   `custom_report_entries`: Manage entries (rows/metrics) within custom report groups. (Returns `CustomReportEntry` models)
+*   `custom_report_values`: Manage the actual data values for custom report entries. (Returns `CustomReportValueList` or lists of `CustomReportValue` models)
+*   `custom_report_debt_entries`: Manage debt-related entries for custom reports. (Returns `CustomReportDebtEntry` models)
 
-Please refer to the docstrings within each module/class for detailed information on available methods and parameters.
+Please refer to the docstrings within each resource module and model class for detailed information on available methods, parameters, and model attributes.
 
 ## API Versions
 

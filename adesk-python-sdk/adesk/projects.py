@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import Project, ProjectCategory as ProjectCategoryModel
+
 class Projects:
     """
     Provides methods for interacting with Adesk projects (API v1).
@@ -29,8 +31,8 @@ class Projects:
             sorting (str, optional): Sorting criteria (e.g., "name_asc", "date_desc").
 
         Returns:
-            list[dict]: A list of project objects.
-                        Returns an empty list if no projects are found or in case of an error.
+            list[Project]: A list of Project model instances.
+                           Returns an empty list if no projects are found or in case of an error.
         """
         params = {}
         if category is not None:
@@ -51,7 +53,8 @@ class Projects:
             params["sorting"] = sorting
         
         response = self.client.get("projects", params=params)
-        return response.get("projects") if response else []
+        projects_data = response.get("projects", []) if response else []
+        return Project.from_list(projects_data)
 
     def create(self, name, description=None, is_archived=None, plan_income=None, plan_outcome=None, 
                category=None, manager=None, deal_contractor=None, deal_legal_entity=None, is_deal=None):
@@ -72,8 +75,7 @@ class Projects:
             is_deal (bool, optional): Whether the project is considered a deal.
 
         Returns:
-            dict: The created project object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Project | None: The created Project model instance, or None if creation failed.
         """
         if not name:
             raise ValueError("Missing required parameter for creating a project: name.")
@@ -99,7 +101,8 @@ class Projects:
             data["is_deal"] = is_deal
             
         response = self.client.post("project", data=data)
-        return response.get("project") if response else None
+        project_data = response.get("project") if response else None
+        return Project(project_data) if project_data else None
 
     def update(self, project_id, name=None, description=None, is_archived=None, plan_income=None, 
                plan_outcome=None, category=None, manager=None, is_deal=None, 
@@ -122,8 +125,7 @@ class Projects:
             deal_legal_entity (int, optional): New legal entity ID for the deal.
 
         Returns:
-            dict: The updated project object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Project | None: The updated Project model instance, or None if update failed.
         """
         if project_id is None:
             raise ValueError("Missing required parameter for updating a project: project_id.")
@@ -151,7 +153,8 @@ class Projects:
             data["deal_legal_entity"] = deal_legal_entity
             
         response = self.client.post(f"project/{project_id}", data=data)
-        return response.get("project") if response else None
+        project_data = response.get("project") if response else None
+        return Project(project_data) if project_data else None
 
     def delete(self, project_id):
         """
@@ -178,8 +181,9 @@ class Projects:
         Corresponds to Adesk API v1 endpoint: `GET projects/categories`.
 
         Returns:
-            list[dict]: A list of project category objects.
-                        Returns an empty list if no categories are found or in case of an error.
+            list[ProjectCategoryModel]: A list of ProjectCategory model instances.
+                                        Returns an empty list if no categories are found or in case of an error.
         """
         response = self.client.get("projects/categories")
-        return response.get("categories") if response else []
+        categories_data = response.get("categories", []) if response else []
+        return ProjectCategoryModel.from_list(categories_data)

@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import Contractor, Commitment, Requisite
+
 class Contractors:
     """
     Provides methods for interacting with Adesk contractors (API v1).
@@ -29,8 +31,8 @@ class Contractors:
             with_balance (bool, optional): If True, includes balance information for contractors.
 
         Returns:
-            list[dict]: A list of contractor objects.
-                        Returns an empty list if no contractors are found or in case of an error.
+            list[Contractor]: A list of Contractor model instances.
+                              Returns an empty list if no contractors are found or in case of an error.
         """
         params = {}
         if range_str is not None:
@@ -50,8 +52,9 @@ class Contractors:
         if with_balance is not None:
             params["with_balance"] = with_balance
             
-        response = self.client.get("contractors", params=params)
-        return response.get("contractors") if response else []
+        response_data = self.client.get("contractors", params=params)
+        contractors_list_data = response_data.get("contractors", []) if response_data else []
+        return Contractor.from_list(contractors_list_data)
 
     def get(self, contractor_id):
         """
@@ -62,13 +65,13 @@ class Contractors:
             contractor_id (int): The ID of the contractor to retrieve. (Required)
 
         Returns:
-            dict: The contractor object.
-                  Returns None if not found or in case of an error.
+            Contractor | None: The Contractor model instance, or None if not found.
         """
         if not contractor_id:
             raise ValueError("Required parameter missing: contractor_id.")
-        response = self.client.get(f"contractor/{contractor_id}")
-        return response.get("contractor") if response else None
+        response_data = self.client.get(f"contractor/{contractor_id}")
+        contractor_data = response_data.get("contractor") if response_data else None
+        return Contractor(contractor_data) if contractor_data else None
 
     def get_commitments(self, contractor_id):
         """
@@ -79,13 +82,14 @@ class Contractors:
             contractor_id (int): The ID of the contractor. (Required)
 
         Returns:
-            list[dict]: A list of commitment objects for the contractor.
-                        Returns an empty list if none are found or in case of an error.
+            list[Commitment]: A list of Commitment model instances for the contractor.
+                              Returns an empty list if none are found or in case of an error.
         """
         if not contractor_id:
             raise ValueError("Required parameter missing: contractor_id.")
-        response = self.client.get(f"contractor/{contractor_id}/commitments")
-        return response.get("commitments") if response else []
+        response_data = self.client.get(f"contractor/{contractor_id}/commitments")
+        commitments_data = response_data.get("commitments", []) if response_data else []
+        return Commitment.from_list(commitments_data)
 
     def get_requisites(self, contractor_id):
         """
@@ -96,13 +100,14 @@ class Contractors:
             contractor_id (int): The ID of the contractor. (Required)
 
         Returns:
-            list[dict]: A list of requisite objects for the contractor.
-                        Returns an empty list if none are found or in case of an error.
+            list[Requisite]: A list of Requisite model instances for the contractor.
+                             Returns an empty list if none are found or in case of an error.
         """
         if not contractor_id:
             raise ValueError("Required parameter missing: contractor_id.")
-        response = self.client.get(f"contractor/{contractor_id}/requisites")
-        return response.get("requisites") if response else []
+        response_data = self.client.get(f"contractor/{contractor_id}/requisites")
+        requisites_data = response_data.get("requisites", []) if response_data else []
+        return Requisite.from_list(requisites_data)
 
     def create(self, name, contact_person=None, phone_number=None, email=None, description=None):
         """
@@ -117,8 +122,7 @@ class Contractors:
             description (str, optional): Description or notes about the contractor.
 
         Returns:
-            dict: The created contractor object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Contractor | None: The created Contractor model instance, or None if creation failed.
         """
         if not name:
             raise ValueError("Required parameter missing: name.")
@@ -133,8 +137,9 @@ class Contractors:
         if description is not None:
             data["description"] = description
             
-        response = self.client.post("contractor", data=data)
-        return response.get("contractor") if response else None
+        response_data = self.client.post("contractor", data=data)
+        contractor_data = response_data.get("contractor") if response_data else None
+        return Contractor(contractor_data) if contractor_data else None
 
     def update(self, contractor_id, name=None, contact_person=None, phone_number=None, email=None, description=None):
         """

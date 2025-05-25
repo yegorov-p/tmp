@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import Commitment
+
 class Commitments:
     """
     Provides methods for interacting with Adesk commitments (API v1).
@@ -81,8 +83,7 @@ class Commitments:
             **kwargs: Used for product details (see description above).
 
         Returns:
-            dict: The created commitment object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Commitment | None: The created Commitment model instance, or None if creation failed.
         """
         if not all([amount, type, date, contractor, legal_entity, currency]):
             raise ValueError("Required parameters missing: amount, type, date, contractor, legal_entity, currency.")
@@ -104,8 +105,9 @@ class Commitments:
         
         self._format_products_data(data, **kwargs)
             
-        response = self.client.post("commitment", data=data)
-        return response.get("commitment") if response else None
+        response_data = self.client.post("commitment", data=data)
+        commitment_data = response_data.get("commitment") if response_data else None
+        return Commitment(commitment_data) if commitment_data else None
 
     def update(self, commitment_id, legal_entity, amount=None, type=None, date=None, contractor=None, 
                currency=None, description=None, project=None, vat_percent=None, **kwargs):
@@ -129,8 +131,7 @@ class Commitments:
             **kwargs: Used for product details.
 
         Returns:
-            dict: The updated commitment object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Commitment | None: The updated Commitment model instance, or None if update failed.
         """
         if not commitment_id or legal_entity is None: # legal_entity can be 0
             raise ValueError("Required parameters missing: commitment_id, legal_entity.")
@@ -155,8 +156,9 @@ class Commitments:
             
         self._format_products_data(data, **kwargs)
 
-        response = self.client.post(f"commitment/{commitment_id}", data=data)
-        return response.get("commitment") if response else None
+        response_data = self.client.post(f"commitment/{commitment_id}", data=data)
+        commitment_data = response_data.get("commitment") if response_data else None
+        return Commitment(commitment_data) if commitment_data else None
 
     def delete(self, commitment_id):
         """
@@ -188,8 +190,8 @@ class Commitments:
                                             The Adesk API expects this as 'projects[]'.
 
         Returns:
-            list[dict]: A list of commitment objects.
-                        Returns an empty list if no commitments are found or in case of an error.
+            list[Commitment]: A list of Commitment model instances.
+                              Returns an empty list if no commitments are found or in case of an error.
         """
         data = {}
         if range_str is not None:
@@ -203,5 +205,6 @@ class Commitments:
         if projects is not None: # Expects a list of IDs
             data["projects[]"] = projects
             
-        response = self.client.post("commitments", data=data)
-        return response.get("commitments") if response else []
+        response_data = self.client.post("commitments", data=data)
+        commitments_list_data = response_data.get("commitments", []) if response_data else []
+        return Commitment.from_list(commitments_list_data)
