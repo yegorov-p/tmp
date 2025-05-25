@@ -1,9 +1,30 @@
 class Commitments:
+    """
+    Provides methods for interacting with Adesk commitments (API v1).
+    Accessed via `client.commitments`.
+    """
     def __init__(self, client):
+        """
+        Initializes the Commitments resource.
+
+        Args:
+            client (AdeskClient): The AdeskClient instance to use for API calls.
+        """
         self.client = client
 
     def _format_products_data(self, data, **kwargs):
-        """Helper to format product-N-* parameters."""
+        """
+        Internal helper to format product-N-* parameters from kwargs.
+        Example: `product_0_product_id=10, product_0_price=100, product_0_quantity=1`
+        will be converted to:
+        `data['product-0-product_id'] = 10`
+        `data['product-0-price'] = 100`
+        `data['product-0-quantity'] = 1`
+
+        Args:
+            data (dict): The dictionary to which formatted product data will be added.
+            **kwargs: Arbitrary keyword arguments, potentially containing product details.
+        """
         product_counter = 0
         # Assuming kwargs might contain lists of product details or individual product-N-key items
         # This simplified version expects kwargs like product_0_product_id, product_0_price etc.
@@ -39,6 +60,30 @@ class Commitments:
                 pass # Or handle error for incomplete product data
 
     def create(self, amount, type, date, contractor, legal_entity, currency, description=None, project=None, vat_percent=None, **kwargs):
+        """
+        Creates a new commitment.
+        Corresponds to Adesk API v1 endpoint: `POST commitment`.
+
+        Product details can be passed as keyword arguments, e.g.,
+        `product_0_product_id=1, product_0_price=100.0, product_0_quantity=2, product_0_vat_percent=20`.
+        Multiple products can be added by incrementing the index (e.g., `product_1_...`).
+
+        Args:
+            amount (float): The amount of the commitment. (Required)
+            type (str): The type of commitment (e.g., "income", "outcome"). (Required)
+            date (str): The date of the commitment (YYYY-MM-DD). (Required)
+            contractor (int): The ID of the contractor. (Required)
+            legal_entity (int): The ID of the legal entity. (Required)
+            currency (str): The currency code (e.g., "RUB", "USD"). (Required)
+            description (str, optional): Description of the commitment.
+            project (int, optional): The ID of the associated project.
+            vat_percent (float, optional): VAT percentage for the commitment.
+            **kwargs: Used for product details (see description above).
+
+        Returns:
+            dict: The created commitment object.
+                  Returns None if the operation was unsuccessful or the response is empty.
+        """
         if not all([amount, type, date, contractor, legal_entity, currency]):
             raise ValueError("Required parameters missing: amount, type, date, contractor, legal_entity, currency.")
         
@@ -60,10 +105,33 @@ class Commitments:
         self._format_products_data(data, **kwargs)
             
         response = self.client.post("commitment", data=data)
-        return response.get("commitment")
+        return response.get("commitment") if response else None
 
     def update(self, commitment_id, legal_entity, amount=None, type=None, date=None, contractor=None, 
                currency=None, description=None, project=None, vat_percent=None, **kwargs):
+        """
+        Updates an existing commitment.
+        Corresponds to Adesk API v1 endpoint: `POST commitment/<commitment_id>`.
+
+        Product details can be passed as keyword arguments similar to the `create` method.
+
+        Args:
+            commitment_id (int): The ID of the commitment to update. (Required)
+            legal_entity (int): The ID of the legal entity. (Required, even if not changing)
+            amount (float, optional): New amount for the commitment.
+            type (str, optional): New type for the commitment.
+            date (str, optional): New date for the commitment (YYYY-MM-DD).
+            contractor (int, optional): New contractor ID.
+            currency (str, optional): New currency code.
+            description (str, optional): New description.
+            project (int, optional): New project ID.
+            vat_percent (float, optional): New VAT percentage.
+            **kwargs: Used for product details.
+
+        Returns:
+            dict: The updated commitment object.
+                  Returns None if the operation was unsuccessful or the response is empty.
+        """
         if not commitment_id or legal_entity is None: # legal_entity can be 0
             raise ValueError("Required parameters missing: commitment_id, legal_entity.")
 
@@ -88,14 +156,41 @@ class Commitments:
         self._format_products_data(data, **kwargs)
 
         response = self.client.post(f"commitment/{commitment_id}", data=data)
-        return response.get("commitment")
+        return response.get("commitment") if response else None
 
     def delete(self, commitment_id):
+        """
+        Deletes a commitment.
+        Corresponds to Adesk API v1 endpoint: `POST commitment/<commitment_id>/remove`.
+
+        Args:
+            commitment_id (int): The ID of the commitment to delete. (Required)
+
+        Returns:
+            dict: The response from the API, typically confirming success or failure.
+        """
         if not commitment_id:
             raise ValueError("Required parameter missing: commitment_id.")
         return self.client.post(f"commitment/{commitment_id}/remove")
 
     def list_commitments(self, range_str=None, range_start=None, range_end=None, contractors=None, projects=None):
+        """
+        Retrieves a list of commitments based on specified filters.
+        Corresponds to Adesk API v1 endpoint: `POST commitments`. (Note: Uses POST)
+
+        Args:
+            range_str (str, optional): Predefined date range string (e.g., "this_month", "last_quarter").
+            range_start (str, optional): Start date for a custom range (YYYY-MM-DD).
+            range_end (str, optional): End date for a custom range (YYYY-MM-DD).
+            contractors (list[int], optional): List of contractor IDs to filter by.
+                                               The Adesk API expects this as 'contractors[]'.
+            projects (list[int], optional): List of project IDs to filter by.
+                                            The Adesk API expects this as 'projects[]'.
+
+        Returns:
+            list[dict]: A list of commitment objects.
+                        Returns an empty list if no commitments are found or in case of an error.
+        """
         data = {}
         if range_str is not None:
             data["range_str"] = range_str
@@ -109,4 +204,4 @@ class Commitments:
             data["projects[]"] = projects
             
         response = self.client.post("commitments", data=data)
-        return response.get("commitments")
+        return response.get("commitments") if response else []
