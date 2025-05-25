@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import Transfer
+
 class Transfers:
     """
     Provides methods for interacting with Adesk transfers (API v1).
@@ -29,8 +31,7 @@ class Transfers:
             tags (str, optional): Comma-separated string of tag IDs to associate with the transfer.
 
         Returns:
-            dict: The created transfer object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Transfer | None: The created Transfer model instance, or None if creation failed.
         """
         if amount is None or from_bank_account is None or to_bank_account is None:
             raise ValueError("Required parameters missing: amount, from_bank_account, to_bank_account.")
@@ -51,8 +52,9 @@ class Transfers:
         if tags is not None: # comma-separated string of IDs
             data["tags"] = tags
             
-        response = self.client.post("transfer", data=data)
-        return response.get("transfer") if response else None
+        response_data = self.client.post("transfer", data=data)
+        transfer_data = response_data.get("transfer") if response_data else None
+        return Transfer(transfer_data) if transfer_data else None
 
     def split(self, transfers_ids):
         """

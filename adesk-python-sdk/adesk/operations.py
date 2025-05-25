@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import Operation
+
 class Operations:
     """
     Provides methods for interacting with Adesk operations (transactions) (API v1).
@@ -42,8 +44,7 @@ class Operations:
             tags (str, optional): Comma-separated string of tag IDs.
 
         Returns:
-            dict: The created operation object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Operation | None: The created Operation model instance, or None if creation failed.
         """
         if not all([date, type, amount is not None, bank_account is not None]): # amount can be 0
             raise ValueError("Required parameters missing: date, type, amount, bank_account.")
@@ -85,8 +86,9 @@ class Operations:
         if tags is not None: # comma-separated string of IDs
             data["tags"] = tags
             
-        response = self.client.post("transaction", data=data)
-        return response.get("transaction") if response else None
+        response_data = self.client.post("transaction", data=data)
+        op_data = response_data.get("transaction") if response_data else None
+        return Operation(op_data) if op_data else None
 
     def update(self, transaction_id, date, bank_account, amount, category=None, project=None, 
                business_unit=None, contractor=None, description=None, related_date=None, 
@@ -118,8 +120,7 @@ class Operations:
             tags (str, optional): New comma-separated string of tag IDs.
 
         Returns:
-            dict: The updated operation object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            Operation | None: The updated Operation model instance, or None if update failed.
         """
         if not all([transaction_id, date, bank_account is not None, amount is not None]): # bank_account/amount can be 0
             raise ValueError("Required parameters missing: transaction_id, date, bank_account, amount.")
@@ -160,8 +161,9 @@ class Operations:
         if tags is not None: # comma-separated string of IDs
             data["tags"] = tags
             
-        response = self.client.post(f"transaction/{transaction_id}", data=data)
-        return response.get("transaction") if response else None
+        response_data = self.client.post(f"transaction/{transaction_id}", data=data)
+        op_data = response_data.get("transaction") if response_data else None
+        return Operation(op_data) if op_data else None
 
     def delete(self, transaction_id, periodic_edit_type=None):
         """
@@ -217,13 +219,13 @@ class Operations:
             transaction_id (int): ID of the transaction to retrieve. (Required)
 
         Returns:
-            dict: The operation object.
-                  Returns None if not found or in case of an error.
+            Operation | None: The Operation model instance, or None if not found.
         """
         if not transaction_id:
             raise ValueError("Required parameter missing: transaction_id.")
-        response = self.client.get(f"transaction/{transaction_id}")
-        return response.get("transaction") if response else None
+        response_data = self.client.get(f"transaction/{transaction_id}")
+        op_data = response_data.get("transaction") if response_data else None
+        return Operation(op_data) if op_data else None
 
     def list_all(self, range_str=None, range_start=None, range_end=None, type=None, category=None, 
                  bank_account=None, legal_entity=None, contractor=None, contractor_inn=None, 
@@ -253,8 +255,8 @@ class Operations:
             length (int, optional): For pagination, the number of records to retrieve.
 
         Returns:
-            list[dict]: A list of operation objects.
-                        Returns an empty list if no operations are found or in case of an error.
+            list[Operation]: A list of Operation model instances.
+                             Returns an empty list if no operations are found or in case of an error.
         """
         params = {}
         if range_str is not None:
@@ -292,5 +294,6 @@ class Operations:
         if length is not None:
             params["length"] = length
             
-        response = self.client.get("transactions", params=params)
-        return response.get("transactions") if response else []
+        response_data = self.client.get("transactions", params=params)
+        operations_data = response_data.get("transactions", []) if response_data else []
+        return Operation.from_list(operations_data)

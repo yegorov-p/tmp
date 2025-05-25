@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import LegalEntity
+
 class LegalEntities:
     """
     Provides methods for interacting with Adesk legal entities (API v1).
@@ -27,8 +29,7 @@ class LegalEntities:
             registration_number (str, optional): State registration number (e.g., OGRN).
 
         Returns:
-            dict: The created legal entity object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            LegalEntity | None: The created LegalEntity model instance, or None if creation failed.
         """
         if not name:
             raise ValueError("Required parameter missing: name.")
@@ -47,8 +48,9 @@ class LegalEntities:
         if registration_number is not None:
             data["registration_number"] = registration_number
             
-        response = self.client.post("legal-entity", data=data)
-        return response.get("legalEntity") if response else None
+        response_data = self.client.post("legal-entity", data=data)
+        entity_data = response_data.get("legalEntity") if response_data else None
+        return LegalEntity(entity_data) if entity_data else None
 
     def update(self, legal_entity_id, name=None, full_name=None, inn=None, kpp=None, 
                address=None, phone_number=None, registration_number=None, vat_rates=None):
@@ -69,8 +71,7 @@ class LegalEntities:
                                               Example: `[{"name": "VAT 20%", "value": 20.0}]`.
 
         Returns:
-            dict: The updated legal entity object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            LegalEntity | None: The updated LegalEntity model instance, or None if update failed.
         """
         if not legal_entity_id:
             raise ValueError("Required parameter missing: legal_entity_id.")
@@ -93,8 +94,9 @@ class LegalEntities:
         if vat_rates is not None: # Expects a list of dicts, e.g. [{"name": "VAT 20%", "value": 20.0}]
             data["vat_rates"] = vat_rates 
             
-        response = self.client.post(f"legal-entity/{legal_entity_id}", data=data)
-        return response.get("legalEntity") if response else None
+        response_data = self.client.post(f"legal-entity/{legal_entity_id}", data=data)
+        entity_data = response_data.get("legalEntity") if response_data else None
+        return LegalEntity(entity_data) if entity_data else None
 
     def delete(self, legal_entity_id):
         """
@@ -120,13 +122,13 @@ class LegalEntities:
             legal_entity_id (int): The ID of the legal entity to retrieve. (Required)
 
         Returns:
-            dict: The legal entity object.
-                  Returns None if not found or in case of an error.
+            LegalEntity | None: The LegalEntity model instance, or None if not found.
         """
         if not legal_entity_id:
             raise ValueError("Required parameter missing: legal_entity_id.")
-        response = self.client.get(f"legal-entity/{legal_entity_id}")
-        return response.get("legalEntity") if response else None
+        response_data = self.client.get(f"legal-entity/{legal_entity_id}")
+        entity_data = response_data.get("legalEntity") if response_data else None
+        return LegalEntity(entity_data) if entity_data else None
 
     def list_all(self):
         """
@@ -134,8 +136,9 @@ class LegalEntities:
         Corresponds to Adesk API v1 endpoint: `GET legal-entities`.
 
         Returns:
-            list[dict]: A list of legal entity objects.
-                        Returns an empty list if no entities are found or in case of an error.
+            list[LegalEntity]: A list of LegalEntity model instances.
+                               Returns an empty list if no entities are found or in case of an error.
         """
-        response = self.client.get("legal-entities")
-        return response.get("legalEntities") if response else []
+        response_data = self.client.get("legal-entities")
+        entities_data = response_data.get("legalEntities", []) if response_data else []
+        return LegalEntity.from_list(entities_data)

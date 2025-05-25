@@ -1,3 +1,11 @@
+# adesk/models/custom_reports.py
+from .base_model import BaseModel
+# from .projects import Project # Import if/when projects_data is fully modeled
+from adesk_python_sdk.adesk.models import (
+    CustomReportGroup, CustomReportEntry, CustomReportValue, 
+    CustomReportValueList, CustomReportDebtEntry
+)
+
 class CustomReportGroups:
     """
     Provides methods for interacting with Adesk Custom Report Groups (API v2).
@@ -24,8 +32,8 @@ class CustomReportGroups:
             report_section (str, optional): Filter by report section (camelCase: reportSection).
 
         Returns:
-            list[dict]: A list of custom report group objects.
-                        Returns an empty list if none are found or in case of an error.
+            list[CustomReportGroup]: A list of CustomReportGroup model instances.
+                                     Returns an empty list if none are found or in case of an error.
         """
         params = {}
         if name is not None:
@@ -38,7 +46,8 @@ class CustomReportGroups:
             params["reportSection"] = report_section # API expects camelCase
         
         response = self.client.get_v2("custom-report-groups", params=params)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportGroup.from_list(data)
 
     def create(self, groups_data):
         """
@@ -52,14 +61,12 @@ class CustomReportGroups:
                                       API may expect keys in camelCase (e.g., `apiName`).
 
         Returns:
-            list[dict]: A list of the created custom report group objects.
-                        Returns an empty list if the operation was unsuccessful or the response is empty.
+            list[CustomReportGroup]: A list of the created CustomReportGroup model instances.
+                                     Returns an empty list if the operation was unsuccessful or the response is empty.
         """
-        # groups_data is a list of dicts. Keys should be camelCase if API requires.
-        # Example: [{"name": "Group 1", "apiName": "group1", "reportSection": "sales"}]
-        # Assuming requests library sends dict keys as-is.
         response = self.client.post_v2("custom-report-groups/create", json_data=groups_data)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportGroup.from_list(data)
 
     def update(self, groups_data):
         """
@@ -72,13 +79,12 @@ class CustomReportGroups:
                                       Example: `[{"id": 1, "name": "Updated Group 1"}]`
 
         Returns:
-            list[dict]: A list of the updated custom report group objects.
-                        Returns an empty list if the operation was unsuccessful or the response is empty.
+            list[CustomReportGroup]: A list of the updated CustomReportGroup model instances.
+                                     Returns an empty list if the operation was unsuccessful or the response is empty.
         """
-        # groups_data is a list of dicts, each must include 'id'.
-        # Example: [{"id": 1, "name": "Updated Group 1"}]
         response = self.client.post_v2("custom-report-groups/update", json_data=groups_data)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportGroup.from_list(data)
 
     def remove(self, group_ids):
         """
@@ -90,13 +96,10 @@ class CustomReportGroups:
                                    Example: `[1, 2, 3]`
 
         Returns:
-            list[dict]: Typically an empty list or a list of remaining items,
-                        depending on API behavior. May also be an empty list on error.
+            dict: The raw API response, typically confirming success and affected IDs.
         """
-        # group_ids is a list of IDs.
-        # Example: [1, 2, 3]
         response = self.client.post_v2("custom-report-groups/remove", json_data=group_ids)
-        return response.get("data", []) if response else []
+        return response # Returns raw response as per instructions
 
 
 class CustomReportEntries:
@@ -126,8 +129,8 @@ class CustomReportEntries:
             report_section (str, optional): Filter by report section (camelCase: reportSection).
 
         Returns:
-            list[dict]: A list of custom report entry objects.
-                        Returns an empty list if none are found or in case of an error.
+            list[CustomReportEntry]: A list of CustomReportEntry model instances.
+                                     Returns an empty list if none are found or in case of an error.
         """
         params = {}
         if name is not None:
@@ -142,7 +145,8 @@ class CustomReportEntries:
             params["reportSection"] = report_section # API expects camelCase
             
         response = self.client.get_v2("custom-report-entries", params=params)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportEntry.from_list(data)
 
     def create(self, entries_data):
         """
@@ -155,11 +159,12 @@ class CustomReportEntries:
                                        Example: `[{"name": "Entry 1", "apiName": "entry1", "groupId": 1}]`
 
         Returns:
-            list[dict]: A list of the created custom report entry objects.
-                        Returns an empty list if the operation was unsuccessful or the response is empty.
+            list[CustomReportEntry]: A list of the created CustomReportEntry model instances.
+                                     Returns an empty list if the operation was unsuccessful or the response is empty.
         """
         response = self.client.post_v2("custom-report-entries/create", json_data=entries_data)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportEntry.from_list(data)
 
     def update(self, entries_data):
         """
@@ -172,11 +177,12 @@ class CustomReportEntries:
                                        Example: `[{"id": 1, "name": "Updated Entry 1"}]`
 
         Returns:
-            list[dict]: A list of the updated custom report entry objects.
-                        Returns an empty list if the operation was unsuccessful or the response is empty.
+            list[CustomReportEntry]: A list of the updated CustomReportEntry model instances.
+                                     Returns an empty list if the operation was unsuccessful or the response is empty.
         """
         response = self.client.post_v2("custom-report-entries/update", json_data=entries_data)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportEntry.from_list(data)
 
     def remove(self, entry_ids):
         """
@@ -187,11 +193,10 @@ class CustomReportEntries:
             entry_ids (list[int]): A list of IDs of the custom report entries to remove.
 
         Returns:
-            list[dict]: Typically an empty list or a list of remaining items.
-                        May also be an empty list on error.
+            dict: The raw API response.
         """
         response = self.client.post_v2("custom-report-entries/remove", json_data=entry_ids)
-        return response.get("data", []) if response else []
+        return response # Returns raw response
 
 
 class CustomReportValues:
@@ -232,9 +237,8 @@ class CustomReportValues:
             exact_business_unit (bool, optional): Exact match for business unit (camelCase: exactBusinessUnit).
 
         Returns:
-            dict: The full response object from the API, which includes pagination details
-                  and the list of custom report values under the "data" key.
-                  Returns None if the request fails.
+            CustomReportValueList | None: A CustomReportValueList model instance containing parsed data
+                                          and pagination info, or None if request fails or response is not successful.
         """
         params = {}
         if page is not None: params["page"] = page
@@ -252,8 +256,10 @@ class CustomReportValues:
         if business_unit is not None: params["businessUnit"] = business_unit # API expects camelCase
         if exact_business_unit is not None: params["exactBusinessUnit"] = exact_business_unit # API expects camelCase
         
-        # Returns the full response object
-        return self.client.get_v2("custom-report-values", params=params)
+        response = self.client.get_v2("custom-report-values", params=params)
+        if response and response.get("success"):
+            return CustomReportValueList(response) # Pass the whole response to the model
+        return None
 
     def create(self, values_data):
         """
@@ -266,11 +272,12 @@ class CustomReportValues:
                                       Example: `[{"entryId": 1, "date": "2023-01-01", "value": 100.50}]`
 
         Returns:
-            list[dict]: A list of the created custom report value objects.
-                        Returns an empty list if the operation was unsuccessful or the response is empty.
+            list[CustomReportValue]: A list of the created CustomReportValue model instances.
+                                     Returns an empty list if the operation was unsuccessful or the response is empty.
         """
         response = self.client.post_v2("custom-report-values/create", json_data=values_data)
-        return response.get("data", []) if response else [] # Assuming it also returns a 'data' field for consistency
+        data = response.get("data", []) if response else []
+        return CustomReportValue.from_list(data)
 
     def update(self, values_data):
         """
@@ -283,11 +290,12 @@ class CustomReportValues:
                                       Example: `[{"id": 1, "value": 150.75}]`
 
         Returns:
-            list[dict]: A list of the updated custom report value objects.
-                        Returns an empty list if the operation was unsuccessful or the response is empty.
+            list[CustomReportValue]: A list of the updated CustomReportValue model instances.
+                                     Returns an empty list if the operation was unsuccessful or the response is empty.
         """
         response = self.client.post_v2("custom-report-values/update", json_data=values_data)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportValue.from_list(data)
 
     def remove(self, value_ids):
         """
@@ -298,11 +306,10 @@ class CustomReportValues:
             value_ids (list[int]): A list of IDs of the custom report values to remove.
 
         Returns:
-            list[dict]: Typically an empty list or a list of remaining items.
-                        May also be an empty list on error.
+            dict: The raw API response.
         """
         response = self.client.post_v2("custom-report-values/remove", json_data=value_ids)
-        return response.get("data", []) if response else []
+        return response # Returns raw response
 
 
 class CustomReportDebtEntries:
@@ -325,11 +332,12 @@ class CustomReportDebtEntries:
         Corresponds to Adesk API v2 endpoint: `GET custom-report-debt-entries`.
 
         Returns:
-            list[dict]: A list of custom report debt entry objects.
-                        Returns an empty list if none are found or in case of an error.
+            list[CustomReportDebtEntry]: A list of CustomReportDebtEntry model instances.
+                                         Returns an empty list if none are found or in case of an error.
         """
         response = self.client.get_v2("custom-report-debt-entries")
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportDebtEntry.from_list(data)
 
     def create(self, debt_entries_data):
         """
@@ -342,11 +350,12 @@ class CustomReportDebtEntries:
                                             Example: `[{"name": "Debt Entry 1", "value": 1000}]`
 
         Returns:
-            list[dict]: A list of the created custom report debt entry objects.
-                        Returns an empty list if the operation was unsuccessful or the response is empty.
+            list[CustomReportDebtEntry]: A list of the created CustomReportDebtEntry model instances.
+                                         Returns an empty list if the operation was unsuccessful or the response is empty.
         """
         response = self.client.post_v2("custom-report-debt-entries/create", json_data=debt_entries_data)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportDebtEntry.from_list(data)
 
     def update(self, debt_entries_data):
         """
@@ -359,11 +368,12 @@ class CustomReportDebtEntries:
                                             Example: `[{"id": 1, "value": 1200}]`
 
         Returns:
-            list[dict]: A list of the updated custom report debt entry objects.
-                        Returns an empty list if the operation was unsuccessful or the response is empty.
+            list[CustomReportDebtEntry]: A list of the updated CustomReportDebtEntry model instances.
+                                         Returns an empty list if the operation was unsuccessful or the response is empty.
         """
         response = self.client.post_v2("custom-report-debt-entries/update", json_data=debt_entries_data)
-        return response.get("data", []) if response else []
+        data = response.get("data", []) if response else []
+        return CustomReportDebtEntry.from_list(data)
 
     def remove(self, debt_entry_ids):
         """
@@ -374,8 +384,7 @@ class CustomReportDebtEntries:
             debt_entry_ids (list[int]): A list of IDs of the custom report debt entries to remove.
 
         Returns:
-            list[dict]: Typically an empty list or a list of remaining items.
-                        May also be an empty list on error.
+            dict: The raw API response.
         """
         response = self.client.post_v2("custom-report-debt-entries/remove", json_data=debt_entry_ids)
-        return response.get("data", []) if response else []
+        return response # Returns raw response

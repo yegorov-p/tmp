@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import TransactionCategory
+
 class TransactionCategories:
     """
     Provides methods for interacting with Adesk transaction categories (API v1).
@@ -22,8 +24,8 @@ class TransactionCategories:
             full_group (bool, optional): Whether to return the full group structure.
 
         Returns:
-            list[dict]: A list of transaction category objects.
-                        Returns an empty list if no categories are found or in case of an error.
+            list[TransactionCategory]: A list of TransactionCategory model instances.
+                                       Returns an empty list if no categories are found or in case of an error.
         """
         params = {}
         if type is not None:
@@ -32,7 +34,8 @@ class TransactionCategories:
             params["full_group"] = full_group
         
         response = self.client.get("transactions/categories", params=params)
-        return response.get("categories") if response else []
+        categories_data = response.get("categories", []) if response else []
+        return TransactionCategory.from_list(categories_data)
 
     def create_update_delete(self, id=None, name=None, type=None, kind=None, group=None, 
                              is_owner_transfer=None, is_deleted=None, is_archived=None):
@@ -58,9 +61,11 @@ class TransactionCategories:
             is_archived (bool, optional): Set to `True` to archive the category.
 
         Returns:
-            dict: The created or updated transaction category object.
-                  The structure of the response may vary depending on the action (create/update/delete).
-                  Returns None if the operation was unsuccessful or the response is empty.
+            TransactionCategory | dict | None: The created or updated TransactionCategory model instance
+                                               if the action was create or update and successful.
+                                               If deleting, returns the raw API response (dict).
+                                               Returns None if the create/update operation was unsuccessful
+                                               or the response is empty.
         """
         data = {}
         if id is not None:
@@ -85,5 +90,10 @@ class TransactionCategories:
             if not name or type is None or kind is None:
                 raise ValueError("Missing required parameters for creating a category: name, type, kind.")
 
-        response = self.client.post("transactions/category", data=data)
-        return response.get("category") if response else None
+        response_data = self.client.post("transactions/category", data=data)
+        
+        if is_deleted and response_data: # If delete action, return raw response
+            return response_data
+
+        category_data = response_data.get("category") if response_data else None
+        return TransactionCategory(category_data) if category_data else None

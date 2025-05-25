@@ -1,3 +1,5 @@
+from adesk_python_sdk.adesk.models import BankAccount
+
 class BankAccounts:
     """
     Provides methods for interacting with Adesk bank accounts (API v1).
@@ -36,8 +38,7 @@ class BankAccounts:
             category (int, optional): Category ID for cash accounts.
 
         Returns:
-            dict: The created bank account object.
-                  Returns None if the operation was unsuccessful or the response is empty.
+            BankAccount | None: The created BankAccount model instance, or None if creation failed.
         """
         if not all([name, currency, legal_entity is not None]): # legal_entity can be 0
             raise ValueError("Required parameters missing: name, currency, legal_entity.")
@@ -71,7 +72,8 @@ class BankAccounts:
             data["category"] = category # For cash accounts
             
         response = self.client.post("bank-account", data=data)
-        return response.get("bankAccount") if response else None
+        account_data = response.get("bankAccount") if response else None
+        return BankAccount(account_data) if account_data else None
 
     def update(self, bank_account_id, name, number=None, bank_name=None, bank_code=None, 
                initial_amount=None, initial_amount_date=None, legal_entity=None, type=None, 
@@ -156,13 +158,13 @@ class BankAccounts:
             bank_account_id (int): The ID of the bank account to retrieve. (Required)
 
         Returns:
-            dict: The bank account object.
-                  Returns None if not found or in case of an error.
+            BankAccount | None: The BankAccount model instance, or None if not found.
         """
         if not bank_account_id:
             raise ValueError("Required parameter missing: bank_account_id.")
         response = self.client.get(f"bank-account/{bank_account_id}")
-        return response.get("bankAccount") if response else None
+        account_data = response.get("bankAccount") if response else None
+        return BankAccount(account_data) if account_data else None
 
     def list_all(self, start=None, length=None, reduced=None, with_sum_amount=None, 
                  bank_account_type=None, status=None):
@@ -179,8 +181,8 @@ class BankAccounts:
             status (str, optional): Filter by account status ("open" or "closed").
 
         Returns:
-            list[dict]: A list of bank account objects.
-                        Returns an empty list if no accounts are found or in case of an error.
+            list[BankAccount]: A list of BankAccount model instances.
+                               Returns an empty list if no accounts are found or in case of an error.
         """
         params = {}
         if start is not None:
@@ -197,4 +199,5 @@ class BankAccounts:
             params["status"] = status
             
         response = self.client.get("bank-accounts", params=params)
-        return response.get("bankAccounts") if response else []
+        accounts_data = response.get("bankAccounts", []) if response else []
+        return BankAccount.from_list(accounts_data)
